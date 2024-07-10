@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class AccountController extends Controller
 {
@@ -78,6 +81,7 @@ class AccountController extends Controller
         $rules = [
             'name' => 'required|min:8',
             'email' => 'required|email|unique:users,email,'.Auth::user()->id.',id',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ];
 
         if (!empty($request->image)) {
@@ -95,6 +99,13 @@ class AccountController extends Controller
         $user->save();
 
         if (!empty($request->image)) {
+
+            // xoa img cu
+
+            File::delete(public_path('uploads/profile/'. $user->image));
+            File::delete(public_path('uploads/profile/thumb/'. $user->image));
+
+
             // Lấy hình ảnh từ request
             $image = $request->image;
             
@@ -105,13 +116,18 @@ class AccountController extends Controller
             $imageName = time().'.'.$ext;
             
             // Di chuyển tệp ảnh đến thư mục uploads/profile trong public
-            $image->move(public_path('uploads/profile'), $imageName);
+            $image->move(public_path('uploads/profile/'), $imageName);
         
             // Gán tên tệp ảnh mới cho thuộc tính image của user
             $user->image = $imageName;
             
             // Lưu thông tin user
             $user->save();
+
+            $manager = new ImageManager(Driver::class);
+            $img = $manager->read(public_path('uploads/profile/'. $imageName)); // 800 x 600 
+            $img->cover(150, 150);
+            $img->save(public_path('uploads/profile/thumb/'. $imageName));
         }
         
         
