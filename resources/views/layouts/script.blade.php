@@ -9,4 +9,7 @@
             element.style.display = 'none';
         }
     }, 5000);
+
+//    thực hiện thông báo và xóa sách
+    
 </script>
